@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  segment   String?   // es. A/B/C
+  orders    SalesOrder[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  operations  Operation[]
+  orderLines  SalesOrderLine[]
+}
+
+model WorkCenter {
+  id                  Int      @id @default(autoincrement())
+  code                String   @unique
+  name                String
+  capacityHoursPerDay Float
+  operations          Operation[]
+}
+
+model SimulationDay {
+  id          Int           @id @default(autoincrement())
+  dayIndex    Int           @unique
+  currentDate DateTime
+  orders      SalesOrder[]
+  kpis        KpiSnapshot[]
+}
+
+model SalesOrder {
+  id             Int              @id @default(autoincrement())
+  customer       Customer         @relation(fields: [customerId], references: [id])
+  customerId     Int
+  orderDate      DateTime
+  simulationDay  SimulationDay    @relation(fields: [simulationDayId], references: [id])
+  simulationDayId Int
+  lines          SalesOrderLine[]
+}
+
+model SalesOrderLine {
+  id            Int      @id @default(autoincrement())
+  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id])
+  salesOrderId  Int
+  product       Product   @relation(fields: [productId], references: [id])
+  productId     Int
+  qty           Int
+  requestedDate DateTime
+  priority      Int
+}
+
+model Operation {
+  id           Int        @id @default(autoincrement())
+  product      Product    @relation(fields: [productId], references: [id])
+  productId    Int
+  workCenter   WorkCenter @relation(fields: [workCenterId], references: [id])
+  workCenterId Int
+  setupTime    Float      // ore
+  runTimePerUnit Float    // ore per pezzo
+}
+
+model KpiSnapshot {
+  id             Int           @id @default(autoincrement())
+  simulationDay  SimulationDay @relation(fields: [simulationDayId], references: [id])
+  simulationDayId Int
+  otif           Float
+  avgLeadTime    Float
+  wc1Utilization Float
+  wc2Utilization Float
+  wc3Utilization Float
+  lateOrders     Int
+  wipQty         Int
+}
+
